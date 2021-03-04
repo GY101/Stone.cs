@@ -11,6 +11,12 @@ namespace Stone
 {
     public class Lexer
     {
+        /// <summary>
+        /// <code>
+        ///  JAVA: \p{Punct}	Punctuation: One of !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+        ///  C#： \p{P}|\p{S} 对应的不确定  ,哈哈哈
+        /// </code>
+        /// </summary>
         public const string regexPat = @"\s*((//.*)|([0-9]+)|(""(\\""|\\\\|\\n|[^""])*"")|[A-Z_a-z][A-Z_a-z0-9]*|==|<=|>=|&&|\|\||\p{P}|\p{S})?";
         private Regex _regex = new Regex(regexPat, RegexOptions.Compiled);
         private List<Token> queue = new List<Token>();
@@ -75,10 +81,9 @@ namespace Stone
                 return;
             }
             int pos = 0;
-            int endPos = line.Length;
-            while (pos < endPos)
+            var match = _regex.Match(line);
+            while (match != Match.Empty)
             {
-                var match = _regex.Match(line, pos);
                 if (match.Index == pos)
                 {
                     AddToken(_lineNo, match);
@@ -86,24 +91,26 @@ namespace Stone
                 }
                 else
                     throw new ParseException("bad token at line " + _lineNo);
+                match = match.NextMatch();
             }
             queue.Add(new IdToken(_lineNo, Token.EOL));
         }
 
         private void AddToken(int lineNo, Match match)
         {
-            var m = match.Groups[1].Value;
-            if (m != null) // if not a space
+            var group1 = match.Groups[1];
+            var value = group1.Value;
+            if (group1.Success) // if not a space
             {
-                if (match.Groups[2].Value == string.Empty)
+                if (!match.Groups[2].Success)
                 { // if not a comment
                     Token token;
-                    if (match.Groups[3].Value != string.Empty)
-                        token = new NumToken(lineNo, int.Parse(m));
-                    else if (match.Groups[4].Value != string.Empty)
-                        token = new StrToken(lineNo, ToStringLiteral(m));
+                    if (match.Groups[3].Success)
+                        token = new NumToken(lineNo, int.Parse(value));
+                    else if (match.Groups[4].Success)
+                        token = new StrToken(lineNo, ToStringLiteral(value));
                     else
-                        token = new IdToken(lineNo, m);
+                        token = new IdToken(lineNo, value);
                     queue.Add(token);
                 }
             }

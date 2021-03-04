@@ -9,9 +9,11 @@ namespace chap3
     {
         static async Task Main(string[] args)
         {
-            var str = @"while i<10 {
-                        sum = sum+i
+            var str = @"1sum = sum+i
+                        while i<10 {
+                        1sum = sum+i
                         i = i +1
+                        str = ""123""
                         }
                         sum";
             Lexer l = new Lexer(str);
